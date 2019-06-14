@@ -46,6 +46,7 @@ under the License.
 
 	<modules>
 		<module>aliyun-connectors-common</module>
+		<module>cloudhbase-connector</module>
 		<module>datahub-connector</module>
 		<module>sls-connector</module>
 		<module>sls-shaded-sdk</module>
