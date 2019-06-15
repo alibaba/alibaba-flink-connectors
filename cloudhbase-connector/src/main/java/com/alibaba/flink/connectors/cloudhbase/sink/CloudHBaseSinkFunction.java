@@ -45,7 +45,11 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Implementation of {@link RichSinkFunction} for CloudHBase.
+ * A sink function for Aliyun CloudHBase. The main features are as follows:
+ * 1. only support synchronous flush
+ * 2. buffer the records to dismiss the duplicated row key
+ * 3. batch records to hbase when flushing
+ * 4. flush to hbase periodically no matter whether the buffer is filled up
  */
 public class CloudHBaseSinkFunction<RECORD> extends RichSinkFunction<RECORD> implements ListCheckpointed<byte[]>  {
 

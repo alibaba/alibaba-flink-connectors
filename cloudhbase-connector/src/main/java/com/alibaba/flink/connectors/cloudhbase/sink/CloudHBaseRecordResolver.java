@@ -40,14 +40,4 @@ public interface CloudHBaseRecordResolver<RECORD> extends RecordResolver<RECORD>
 	 * @param record the record whose mutation is returned.
 	 */
 	Mutation getMutation(RECORD record);
-
-	/**
-	 * Initialization method for the resolver.
-	 */
-	void open();
-
-	/**
-	 * Tear-down method for the resolver.
-	 */
-	void close();
 }

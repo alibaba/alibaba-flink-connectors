@@ -25,4 +25,16 @@ import java.io.Serializable;
  * For example, the user callback to send a Kafka ProducerRecord.
  */
 public interface RecordResolver<T> extends Serializable {
+
+	/**
+	 * Initialization method for the resolver.
+	 */
+	default void open() {
+	}
+
+	/**
+	 * Tear-down method for the resolver.
+	 */
+	default void close() {
+	}
 }
