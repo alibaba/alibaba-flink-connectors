@@ -157,15 +157,5 @@ public class CloudHBaseSinkFunctionExample {
 				return delete;
 			}
 		}
-
-		@Override
-		public void open() {
-
-		}
-
-		@Override
-		public void close() {
-
-		}
 	}
 }

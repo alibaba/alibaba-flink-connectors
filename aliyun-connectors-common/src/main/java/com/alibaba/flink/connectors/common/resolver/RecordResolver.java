@@ -18,6 +18,8 @@
 
 package com.alibaba.flink.connectors.common.resolver;
 
+import org.apache.flink.configuration.Configuration;
+
 import java.io.Serializable;
 
 /**
@@ -29,7 +31,7 @@ public interface RecordResolver<T> extends Serializable {
 	/**
 	 * Initialization method for the resolver.
 	 */
-	default void open() {
+	default void open(Configuration configuration) {
 	}
 
 	/**

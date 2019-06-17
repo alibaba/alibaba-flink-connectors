@@ -153,7 +153,7 @@ public class CloudHBaseSinkFunction<RECORD> extends RichSinkFunction<RECORD> imp
 
 	@Override
 	public void open(Configuration config) throws IOException {
-		this.recordResolver.open();
+		this.recordResolver.open(config);
 
 		// create hbase connection
 		org.apache.hadoop.conf.Configuration conf = HBaseConfiguration.create();
