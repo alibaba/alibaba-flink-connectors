@@ -18,6 +18,8 @@
 
 package com.alibaba.flink.connectors.common.resolver;
 
+import org.apache.flink.configuration.Configuration;
+
 import java.io.Serializable;
 
 /**
@@ -25,4 +27,16 @@ import java.io.Serializable;
  * For example, the user callback to send a Kafka ProducerRecord.
  */
 public interface RecordResolver<T> extends Serializable {
+
+	/**
+	 * Initialization method for the resolver.
+	 */
+	default void open(Configuration configuration) {
+	}
+
+	/**
+	 * Tear-down method for the resolver.
+	 */
+	default void close() {
+	}
 }
