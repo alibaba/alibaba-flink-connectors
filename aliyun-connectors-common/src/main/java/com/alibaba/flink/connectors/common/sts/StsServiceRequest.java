@@ -25,8 +25,8 @@ import com.aliyuncs.http.MethodType;
 import com.aliyuncs.http.X509TrustAll;
 import com.aliyuncs.profile.DefaultProfile;
 import com.aliyuncs.profile.IClientProfile;
-import com.aliyuncs.sts.model.v20150401.AssumeRoleWithServiceIdentityRequest;
-import com.aliyuncs.sts.model.v20150401.AssumeRoleWithServiceIdentityResponse;
+import com.aliyuncs.sts.model.v20150401.AssumeRoleRequest;
+import com.aliyuncs.sts.model.v20150401.AssumeRoleResponse;
 
 import static com.alibaba.flink.connectors.common.sts.StsConstants.DURATION;
 import static com.alibaba.flink.connectors.common.sts.StsConstants.PROTOCOL_TYPE;
@@ -37,7 +37,7 @@ import static com.alibaba.flink.connectors.common.sts.StsConstants.PROTOCOL_TYPE
 public class StsServiceRequest {
 	private static final String INNER_STS_ENDPOINT = "__inner__blink_sts_endpoints__";
 
-	public static AssumeRoleWithServiceIdentityResponse assumeRoleWithServiceIdentity(
+	public static AssumeRoleResponse assumeRoleWithServiceIdentity(
 			final String streamAccessId, final String streamAccessKey,
 			final String roleArn, final String roleSessionName,
 			final String assumeRoleFor,
@@ -67,17 +67,17 @@ public class StsServiceRequest {
 		}
 
 		// 创建一个 AssumeRoleRequest 并设置请求参数
-		final AssumeRoleWithServiceIdentityRequest request = new AssumeRoleWithServiceIdentityRequest();
+		final AssumeRoleRequest request = new AssumeRoleRequest();
 		request.setMethod(MethodType.POST);
 
 		request.setProtocol(PROTOCOL_TYPE);
 		request.setDurationSeconds(DURATION);
 		request.setRoleArn(roleArn);
 		request.setRoleSessionName(roleSessionName);
-		request.setAssumeRoleFor(assumeRoleFor);
+//		request.setAssumeRoleFor(assumeRoleFor);
 		X509TrustAll.ignoreSSLCertificate();
 		// 发起请求，并得到response
-		final AssumeRoleWithServiceIdentityResponse response = client.getAcsResponse(request);
+		final AssumeRoleResponse response = client.getAcsResponse(request);
 
 		return response;
 	}

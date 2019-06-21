@@ -24,7 +24,7 @@ import org.apache.flink.shaded.guava18.com.google.common.cache.CacheLoader;
 import org.apache.flink.shaded.guava18.com.google.common.cache.LoadingCache;
 
 import com.alibaba.flink.connectors.common.conf.BlinkOptions;
-import com.aliyuncs.sts.model.v20150401.AssumeRoleWithServiceIdentityResponse;
+import com.aliyuncs.sts.model.v20150401.AssumeRoleResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -86,7 +86,7 @@ public abstract class AbstractClientProvider<T> {
 			logger.info("getAssumeRole with para accessId " + stsAccessId + ", secretKey " +
 					stsAccessKey + ", roleArn " + stsRoleArn +
 					", stsSessionName " + stsSessionName);
-			AssumeRoleWithServiceIdentityResponse role = StsServiceRequest.assumeRoleWithServiceIdentity(
+			AssumeRoleResponse role = StsServiceRequest.assumeRoleWithServiceIdentity(
 					stsAccessId, stsAccessKey, stsRoleArn, stsSessionName, stsAssumeRoleFor, properties);
 				return new InnerStsIdentity(role.getCredentials().getAccessKeyId(),
 						role.getCredentials().getAccessKeySecret(),

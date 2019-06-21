@@ -35,7 +35,7 @@
 		</dependency>
 		<dependency>
 			<groupId>com.aliyun</groupId>
-			<artifactId>aliyun-java-sdk-sts-internal</artifactId>
+			<artifactId>aliyun-java-sdk-sts</artifactId>
 			<version>2.1.6</version>
 		</dependency>
 		<dependency>

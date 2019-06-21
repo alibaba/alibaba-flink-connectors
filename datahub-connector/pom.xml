@@ -17,7 +17,7 @@
 		<dependency>
 			<groupId>com.aliyun.datahub</groupId>
 			<artifactId>aliyun-sdk-datahub</artifactId>
-			<version>2.12.2</version>
+			<version>2.12.2-public</version>
 			<exclusions>
 				<exclusion>
 					<groupId>org.slf4j</groupId>
@@ -48,12 +48,6 @@
 					<!--<groupId>com.fasterxml.jackson.core</groupId>-->
 				<!--</exclusion>-->
 			</exclusions>
-		</dependency>
-		<!-- when roleArn mode use it-->
-		<dependency>
-			<groupId>com.aliyun</groupId>
-			<artifactId>aliyun-java-sdk-sts-internal</artifactId>
-			<version>2.1.6</version>
 		</dependency>
 		<dependency>
 			<groupId>com.ablibaba.flink</groupId>
