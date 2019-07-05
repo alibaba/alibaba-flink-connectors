@@ -125,7 +125,7 @@ public abstract class AbstractParallelSourceBase<T, CURSOR extends Serializable>
 			&& null != context.getExecutionConfig().getGlobalJobParameters()) {
 			Map<String, String> globalParametersMap = context.getExecutionConfig().getGlobalJobParameters().toMap();
 			if (null != globalParametersMap && globalParametersMap.size() != 0) {
-				for (String s : globalParametersMap.values()) {
+				for (String s : globalParametersMap.keySet()) {
 					config.setString(s, globalParametersMap.get(s));
 				}
 			}
