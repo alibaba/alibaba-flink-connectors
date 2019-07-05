@@ -76,7 +76,7 @@ public abstract class AbstractParallelSourceBase<T, CURSOR extends Serializable>
 
 	protected boolean disableParallelRead = false;
 
-	protected boolean initInputSplitInMaster = true;
+	protected boolean initInputSplitInMaster = false;
 
 	protected boolean tracingMetricEnabled = true;
 
