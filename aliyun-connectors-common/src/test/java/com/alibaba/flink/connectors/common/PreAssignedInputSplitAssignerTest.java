@@ -87,16 +87,6 @@ public class PreAssignedInputSplitAssignerTest {
 		assigner.returnInputSplit(Collections.singletonList(new MockInputSplit(3)), 1);
 	}
 
-	@Test (expected = IllegalArgumentException.class)
-	public void testDuplicateSplitsInConstructor() {
-		InputSplit split = new MockInputSplit(0);
-		InputSplit[] inputSplits = new InputSplit[]{split, split};
-		int[] taskInputSplitSize = new int[]{2};
-		int[] taskInputSplitStartIndex = new int[]{0};
-		new AbstractParallelSourceBase.PreAssignedInputSplitAssigner(
-				inputSplits, taskInputSplitSize, taskInputSplitStartIndex);
-	}
-
 	private InputSplitAssigner getAssigner() {
 		InputSplit[] inputSplits = new InputSplit[NUM_SPLITS];
 		int[] taskInputSplitSize = new int[NUM_TASKS];

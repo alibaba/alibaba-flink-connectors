@@ -50,11 +50,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * AbstractParallelSourceBase.
@@ -357,7 +355,6 @@ public abstract class AbstractParallelSourceBase<T, CURSOR extends Serializable>
 		private final Map<Integer, Deque<InputSplit>> unassignedSplitsByTask;
 
 		public PreAssignedInputSplitAssigner(InputSplit[] inputSplits, int[] taskInputSplitSize, int[] taskInputSplitStartIndex) {
-			checkDuplicateSplits(inputSplits);
 			this.assignedSplits = new HashMap<>(inputSplits.length);
 			this.unassignedSplitsByTask = new HashMap<>();
 			List<InputSplit> splitList = Arrays.asList(inputSplits);
@@ -394,14 +391,6 @@ public abstract class AbstractParallelSourceBase<T, CURSOR extends Serializable>
 
 		private void checkTaskIndex(int taskIndex) {
 			Preconditions.checkArgument(taskIndex >= 0 && taskIndex < unassignedSplitsByTask.size(), "Fail to create");
-		}
-
-		private void checkDuplicateSplits(InputSplit[] splits) {
-			Set<Integer> set = new HashSet<>();
-			for (InputSplit split : splits) {
-				Preconditions.checkArgument(set.add(split.getSplitNumber()),
-					"Found duplicate split " + split.getSplitNumber());
-			}
 		}
 	}
 }
