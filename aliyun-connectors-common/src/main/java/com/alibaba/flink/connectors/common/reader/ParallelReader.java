@@ -19,7 +19,6 @@
 package com.alibaba.flink.connectors.common.reader;
 
 import org.apache.flink.api.common.functions.RuntimeContext;
-import org.apache.flink.api.common.functions.StoppableFunction;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.api.java.tuple.Tuple5;
 import org.apache.flink.configuration.Configuration;
@@ -61,7 +60,7 @@ import java.util.concurrent.TimeUnit;
  * @param <CURSOR> the type parameter
  */
 public class ParallelReader<OUT, CURSOR extends Serializable>
-		implements WatermarkProvider, StoppableFunction {
+		implements WatermarkProvider {
 	private static final Logger LOG = LoggerFactory.getLogger(ParallelReader.class);
 	private static final String SPLIT_PIPE_LEN_CONFIG = Constants.CONFIG_PREFIX + "source.buffer-len";
 	private static final String IDLE_INTERVAL_CONFIG = Constants.CONFIG_PREFIX + "source.idle-interval";
@@ -180,7 +179,6 @@ public class ParallelReader<OUT, CURSOR extends Serializable>
 	/**
 	 * Stop externally.
 	 */
-	@Override
 	public void stop() {
 		stop = true;
 	}

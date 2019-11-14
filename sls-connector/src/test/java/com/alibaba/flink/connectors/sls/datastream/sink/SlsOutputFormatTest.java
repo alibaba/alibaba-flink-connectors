@@ -63,20 +63,22 @@ public class SlsOutputFormatTest {
 	public void testCommit() throws ProducerException, InterruptedException, IOException {
 
 		SlsRecordResolver<Row> serializationSchema = Mockito.mock(SlsRecordResolver.class);
-		SlsOutputFormat outputFormat = new SlsOutputFormat(
+		SlsOutputFormat<Row> outputFormat = new SlsOutputFormat(
 				"", "", "", "test_project", "test_store", serializationSchema);
 		LogProducer producer = Mockito.mock(LogProducer.class);
 		LogProducerProvider producerProvider = Mockito.mock(LogProducerProvider.class);
 		Mockito.when(producerProvider.getClient()).thenReturn(producer);
 
 		SettableFuture future = SettableFuture.create();
+		// Use any() instead of anyString() because in Mockito 2.x, anyString() does not match null any more,
+		// which may cause the test to fail.
 		Mockito.when(
 				producer.send(
 						Mockito.eq("test_project"),
 						Mockito.eq("test_store"),
-						Mockito.anyString(),
-						Mockito.anyString(),
-						Mockito.anyString(),
+						Mockito.any(),
+						Mockito.any(),
+						Mockito.any(),
 						Mockito.anyList())).thenReturn(future);
 
 		ExecutorService executor = Executors.newSingleThreadExecutor();

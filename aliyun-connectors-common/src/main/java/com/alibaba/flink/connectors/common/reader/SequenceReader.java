@@ -19,7 +19,6 @@
 package com.alibaba.flink.connectors.common.reader;
 
 import org.apache.flink.api.common.functions.RuntimeContext;
-import org.apache.flink.api.common.functions.StoppableFunction;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.core.io.InputSplit;
 import org.apache.flink.metrics.Counter;
@@ -40,7 +39,7 @@ import java.io.IOException;
  * split.
  * @param <T> Output type of the {@link AbstractParallelSourceBase}
  */
-public class SequenceReader<T> implements StoppableFunction{
+public class SequenceReader<T> {
 
 	private InputSplitProvider inputSplitProvider;
 	private AbstractParallelSourceBase<T, ?> sourceFunction;
@@ -85,7 +84,6 @@ public class SequenceReader<T> implements StoppableFunction{
 	/**
 	 * Stop externally.
 	 */
-	@Override
 	public void stop() {
 		isStop = true;
 	}
