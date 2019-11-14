@@ -86,10 +86,15 @@ public class SlsOutputFormat<T> extends RichOutputFormat<T> implements Syncable,
 	private SlsRecordResolver<T> serializationSchema;
 
 	public SlsOutputFormat(
-			String endPoint, String accessKeyId, String accessKey,
-			String projectName, String logstoreName,
+			Configuration properties,
+			String endPoint,
+			String accessKeyId,
+			String accessKey,
+			String projectName,
+			String logstoreName,
 			SlsRecordResolver<T> serializationSchema) {
 
+		this.properties = properties;
 		this.endPoint = endPoint;
 		this.projectName = projectName;
 		this.logstore = logstoreName;
@@ -99,8 +104,10 @@ public class SlsOutputFormat<T> extends RichOutputFormat<T> implements Syncable,
 	}
 
 	public SlsOutputFormat(
-			String endPoint, Configuration properties,
-			String projectName, String logstoreName,
+			Configuration properties,
+			String endPoint,
+			String projectName,
+			String logstoreName,
 			SlsRecordResolver<T> serializationSchema) {
 
 		this.endPoint = endPoint;
@@ -135,6 +142,7 @@ public class SlsOutputFormat<T> extends RichOutputFormat<T> implements Syncable,
 			logProducerProvider = new LogProducerProvider(
 														projectName,
 														endPoint,
+														properties,
 														accessKeyId,
 														accessKey,
 														maxRetryTime,
@@ -213,7 +221,9 @@ public class SlsOutputFormat<T> extends RichOutputFormat<T> implements Syncable,
 		try {
 			sync();
 		} finally {
-			logProducerProvider.closeClient();
+			if (logProducerProvider != null) {
+				logProducerProvider.closeClient();
+			}
 		}
 		LOG.info("Flushing done. Closing the producer instance.");
 	}
@@ -307,10 +317,10 @@ public class SlsOutputFormat<T> extends RichOutputFormat<T> implements Syncable,
 		public SlsOutputFormat<T> build() {
 			SlsOutputFormat outputFormat = null;
 			if (!StringUtils.isNullOrWhitespaceOnly(accessKeyId) && !StringUtils.isNullOrWhitespaceOnly(accessKey)) {
-				outputFormat = new SlsOutputFormat(endPoint,
+				outputFormat = new SlsOutputFormat(properties, endPoint,
 												accessKeyId, accessKey, projectName, logstore, serializationSchema);
 			} else {
-				outputFormat = new SlsOutputFormat(endPoint, properties, projectName, logstore, serializationSchema);
+				outputFormat = new SlsOutputFormat(properties, endPoint, projectName, logstore, serializationSchema);
 			}
 			outputFormat.setFlushInterval(flushInterval).setFailOnError(failOnError).setMaxRetryTime(maxRetryTimes);
 			return outputFormat;
