@@ -17,13 +17,14 @@
 
 package com.alibaba.flink.connectors.sls.datastream.sink;
 
+import org.apache.flink.configuration.ConfigOption;
+import org.apache.flink.configuration.ConfigOptions;
 import org.apache.flink.configuration.Configuration;
 
 import com.alibaba.flink.connectors.common.sts.AbstractClientProvider;
 import com.aliyun.openservices.aliyun.log.producer.LogProducer;
 import com.aliyun.openservices.aliyun.log.producer.ProducerConfig;
 import com.aliyun.openservices.aliyun.log.producer.ProjectConfig;
-import com.aliyun.openservices.aliyun.log.producer.ProjectConfigs;
 import com.aliyun.openservices.aliyun.log.producer.errors.ProducerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,19 +34,37 @@ import org.slf4j.LoggerFactory;
  */
 public class LogProducerProvider extends AbstractClientProvider<LogProducer> {
 	private static final Logger LOGGER = LoggerFactory.getLogger(AbstractClientProvider.class);
-	private transient ProducerConfig producerConfig;
+
+	/** initial retry back off time. */
+	public static final ConfigOption<Long> BASE_RETRY_BACK_OFF_TIME_MS =
+			ConfigOptions.key("baseRetryBackOffTimeMs".toLowerCase()).defaultValue(500L);
+
+	/** max retry back off time. */
+	public static final ConfigOption<Long> MAX_RETRY_BACK_OFF_TIME_MS =
+			ConfigOptions.key("maxRetryBackOffTimeMs".toLowerCase()).defaultValue(120_000L);
+
+	/** wait forever while sending record. */
+	public static final ConfigOption<Long> MAX_BLOCK_TIME_MS =
+			ConfigOptions.key("maxBlockTimeMs".toLowerCase()).defaultValue(-1L);
+
+	/** io thread num of sls producer. */
+	public static final ConfigOption<Integer> IO_THREAD_NUM =
+			ConfigOptions.key("IOThreadNum".toLowerCase()).defaultValue(8);
+
 	private String endPoint;
 	private String projectName;
 	private int maxRetryTimes;
 	private int flushInterval;
+	private Configuration properties;
 
 	public LogProducerProvider(
-			String projectName, String endPoint, String accessId, String accessKey, int maxRetryTimes, int flushInterval) {
+			String projectName, String endPoint, Configuration properties, String accessId, String accessKey, int maxRetryTimes, int flushInterval) {
 		super(accessId, accessKey);
 		this.projectName = projectName;
 		this.endPoint = endPoint;
 		this.maxRetryTimes = maxRetryTimes;
 		this.flushInterval = flushInterval;
+		this.properties = properties;
 	}
 
 	public LogProducerProvider(String projectName, String endPoint, Configuration properties, int maxRetryTimes, int flushInterval) {
@@ -54,6 +73,7 @@ public class LogProducerProvider extends AbstractClientProvider<LogProducer> {
 		this.endPoint = endPoint;
 		this.maxRetryTimes = maxRetryTimes;
 		this.flushInterval = flushInterval;
+		this.properties = properties;
 	}
 
 	@Override
@@ -77,25 +97,26 @@ public class LogProducerProvider extends AbstractClientProvider<LogProducer> {
 
 	@Override
 	protected LogProducer produceNormalClient(String accessId, String accessKey) {
-		ProjectConfigs projectConfigs = new ProjectConfigs();
 		ProjectConfig projectConfig = new ProjectConfig(this.projectName, this.endPoint, accessId, accessKey);
-		projectConfigs.put(projectConfig);
-		producerConfig = new ProducerConfig(projectConfigs);
-		producerConfig.setLingerMs(flushInterval);
-		producerConfig.setRetries(maxRetryTimes);
-		LogProducer producer = new LogProducer(producerConfig);
-		return producer;
+		return createLogProducerInternal(projectConfig);
 	}
 
 	@Override
 	protected LogProducer produceStsClient(String accessId, String accessKey, String securityToken) {
-		ProjectConfigs projectConfigs = new ProjectConfigs();
 		ProjectConfig projectConfig = new ProjectConfig(this.projectName, this.endPoint, accessId, accessKey, securityToken);
-		projectConfigs.put(projectConfig);
-		producerConfig = new ProducerConfig(projectConfigs);
+		return createLogProducerInternal(projectConfig);
+	}
+
+	private LogProducer createLogProducerInternal(ProjectConfig projectConfig) {
+		ProducerConfig producerConfig = new ProducerConfig();
 		producerConfig.setLingerMs(flushInterval);
 		producerConfig.setRetries(maxRetryTimes);
+		producerConfig.setBaseRetryBackoffMs(properties.getLong(BASE_RETRY_BACK_OFF_TIME_MS));
+		producerConfig.setMaxRetryBackoffMs(properties.getLong(MAX_RETRY_BACK_OFF_TIME_MS));
+		producerConfig.setMaxBlockMs(properties.getLong(MAX_BLOCK_TIME_MS));
+		producerConfig.setIoThreadCount(properties.getInteger(IO_THREAD_NUM));
 		LogProducer producer = new LogProducer(producerConfig);
+		producer.putProjectConfig(projectConfig);
 		return producer;
 	}
 }

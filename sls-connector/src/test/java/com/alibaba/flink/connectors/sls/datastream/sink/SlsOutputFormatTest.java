@@ -18,6 +18,7 @@
 
 package com.alibaba.flink.connectors.sls.datastream.sink;
 
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.metrics.Meter;
 import org.apache.flink.types.Row;
 
@@ -47,7 +48,7 @@ public class SlsOutputFormatTest {
 	public void testCommitFailed() {
 		SlsRecordResolver serializationSchema = Mockito.mock(SlsRecordResolver.class);
 		SlsOutputFormat outputFormat = new SlsOutputFormat(
-				"", "", "", "", "", serializationSchema);
+				new Configuration(), "", "", "", "", "", serializationSchema);
 
 		SlsOutputFormat.SendFutureCallback callback = outputFormat.new SendFutureCallback();
 		callback.onFailure(new Exception("1"));
@@ -64,7 +65,7 @@ public class SlsOutputFormatTest {
 
 		SlsRecordResolver<Row> serializationSchema = Mockito.mock(SlsRecordResolver.class);
 		SlsOutputFormat<Row> outputFormat = new SlsOutputFormat(
-				"", "", "", "test_project", "test_store", serializationSchema);
+				new Configuration(), "", "", "", "test_project", "test_store", serializationSchema);
 		LogProducer producer = Mockito.mock(LogProducer.class);
 		LogProducerProvider producerProvider = Mockito.mock(LogProducerProvider.class);
 		Mockito.when(producerProvider.getClient()).thenReturn(producer);

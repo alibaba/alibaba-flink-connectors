@@ -30,16 +30,23 @@ under the License.
 	<artifactId>sls-shaded-sdk</artifactId>
 
 	<dependencies>
+
 		<dependency>
-            <groupId>com.aliyun.openservices</groupId>
-            <artifactId>aliyun-log-producer</artifactId>
-            <version>0.1.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.aliyun.openservices</groupId>
-            <artifactId>aliyun-log</artifactId>
-            <version>0.6.28</version>
-        </dependency>
+			<groupId>com.aliyun.openservices</groupId>
+			<artifactId>aliyun-log-producer</artifactId>
+			<version>0.3.3</version>
+		</dependency>
+		<dependency>
+			<groupId>com.aliyun.openservices</groupId>
+			<artifactId>aliyun-log</artifactId>
+			<version>0.6.33</version>
+			<exclusions>
+				<exclusion>
+					<groupId>net.jpountz.lz4</groupId>
+					<artifactId>lz4</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
 
 	</dependencies>
 
@@ -80,6 +87,10 @@ under the License.
 								<relocation>
 									<pattern>com.google.common</pattern>
 									<shadedPattern>com.alibaba.flink.sls.shaded.com.google.common</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>com.google.protobuf</pattern>
+									<shadedPattern>com.alibaba.flink.sls.shaded.com.google.protobuf</shadedPattern>
 								</relocation>
 							</relocations>
 						</configuration>
