@@ -19,6 +19,7 @@
 
 package com.alibaba.flink.connectors.common.source;
 
+import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.common.io.DefaultInputSplitAssigner;
 import org.apache.flink.api.common.io.InputFormat;
 import org.apache.flink.api.common.io.statistics.BaseStatistics;
@@ -46,6 +47,9 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Deque;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -342,32 +346,51 @@ public abstract class AbstractParallelSourceBase<T, CURSOR extends Serializable>
 
 	}
 
-	private static class PreAssignedInputSplitAssigner implements InputSplitAssigner {
-
-		private InputSplit[] inputSplits;
-		private int[] taskInputSplitSize;
-		private int[] taskInputSplitStartIndex;
-		private int[] taskInputSplitNextIndex;
+	/**
+	 * Publicly visible for testing.
+	 */
+	@VisibleForTesting
+	public static class PreAssignedInputSplitAssigner implements InputSplitAssigner {
+		private final Map<Integer, Integer> assignedSplits;
+		private final Map<Integer, Deque<InputSplit>> unassignedSplitsByTask;
 
 		public PreAssignedInputSplitAssigner(InputSplit[] inputSplits, int[] taskInputSplitSize, int[] taskInputSplitStartIndex) {
-			this.inputSplits = inputSplits;
-			this.taskInputSplitSize = taskInputSplitSize;
-			this.taskInputSplitStartIndex = taskInputSplitStartIndex;
-			this.taskInputSplitNextIndex = new int[taskInputSplitSize.length];
-			for (int i = 0; i < this.taskInputSplitStartIndex.length; i++) {
-				this.taskInputSplitNextIndex[i] = this.taskInputSplitStartIndex[i];
+			this.assignedSplits = new HashMap<>(inputSplits.length);
+			this.unassignedSplitsByTask = new HashMap<>();
+			List<InputSplit> splitList = Arrays.asList(inputSplits);
+			for (int i = 0; i < taskInputSplitStartIndex.length; i++) {
+				int startingIndexForTask = taskInputSplitStartIndex[i];
+				Deque<InputSplit> splitsForTask =
+						new LinkedList<>(splitList.subList(startingIndexForTask, taskInputSplitSize[i] + startingIndexForTask));
+				unassignedSplitsByTask.put(i, splitsForTask);
 			}
 		}
 
 		@Override
 		public InputSplit getNextInputSplit(String location, int taskIndex) {
-			Preconditions.checkArgument(taskIndex >= 0 && taskIndex < taskInputSplitSize.length, "Fail to create");
-			InputSplit result = null;
-			if (taskInputSplitNextIndex[taskIndex] < taskInputSplitStartIndex[taskIndex] + taskInputSplitSize[taskIndex]) {
-				result = inputSplits[taskInputSplitNextIndex[taskIndex]];
-				taskInputSplitNextIndex[taskIndex] = taskInputSplitNextIndex[taskIndex] + 1;
+			checkTaskIndex(taskIndex);
+			Deque<InputSplit> unassignedSplitsForTask = unassignedSplitsByTask.get(taskIndex);
+			InputSplit split = unassignedSplitsForTask.pollFirst();
+			if (split != null) {
+				assignedSplits.put(split.getSplitNumber(), taskIndex);
 			}
-			return result;
+			return split;
+		}
+
+		@Override
+		public void returnInputSplit(List<InputSplit> splits, int taskIndex) {
+			checkTaskIndex(taskIndex);
+			Deque<InputSplit> splitsForTask = unassignedSplitsByTask.get(taskIndex);
+			for (InputSplit split : splits) {
+				Integer assignedTask = assignedSplits.get(split.getSplitNumber());
+				Preconditions.checkState(assignedTask != null && assignedTask == taskIndex,
+					"Split " + split.getSplitNumber() + " was not assigned to task " + taskIndex);
+				splitsForTask.addFirst(split);
+			}
+		}
+
+		private void checkTaskIndex(int taskIndex) {
+			Preconditions.checkArgument(taskIndex >= 0 && taskIndex < unassignedSplitsByTask.size(), "Fail to create");
 		}
 	}
 }
