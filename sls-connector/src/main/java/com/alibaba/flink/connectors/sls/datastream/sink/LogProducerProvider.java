@@ -20,12 +20,12 @@ package com.alibaba.flink.connectors.sls.datastream.sink;
 import org.apache.flink.configuration.Configuration;
 
 import com.alibaba.flink.connectors.common.sts.AbstractClientProvider;
-import com.aliyun.openservices.aliyun.log.producer.LogProducer;
-import com.aliyun.openservices.aliyun.log.producer.ProducerConfig;
-import com.aliyun.openservices.aliyun.log.producer.ProjectConfig;
-import com.aliyun.openservices.aliyun.log.producer.errors.ProducerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sls.com.aliyun.openservices.aliyun.log.producer.LogProducer;
+import sls.com.aliyun.openservices.aliyun.log.producer.ProducerConfig;
+import sls.com.aliyun.openservices.aliyun.log.producer.ProjectConfig;
+import sls.com.aliyun.openservices.aliyun.log.producer.errors.ProducerException;
 
 /**
  * LogProducer factory.

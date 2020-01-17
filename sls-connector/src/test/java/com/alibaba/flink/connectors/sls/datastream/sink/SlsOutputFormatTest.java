@@ -23,12 +23,12 @@ import org.apache.flink.types.Row;
 
 import com.alibaba.flink.connectors.common.MetricUtils;
 import com.alibaba.flink.sls.shaded.com.google.common.util.concurrent.SettableFuture;
-import com.aliyun.openservices.aliyun.log.producer.LogProducer;
-import com.aliyun.openservices.aliyun.log.producer.Result;
-import com.aliyun.openservices.aliyun.log.producer.errors.ProducerException;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.powermock.reflect.Whitebox;
+import sls.com.aliyun.openservices.aliyun.log.producer.LogProducer;
+import sls.com.aliyun.openservices.aliyun.log.producer.Result;
+import sls.com.aliyun.openservices.aliyun.log.producer.errors.ProducerException;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;

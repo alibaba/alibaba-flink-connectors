@@ -81,6 +81,10 @@ under the License.
 									<pattern>com.google.common</pattern>
 									<shadedPattern>com.alibaba.flink.sls.shaded.com.google.common</shadedPattern>
 								</relocation>
+								<relocation>
+									<pattern>com.aliyun.openservices.aliyun.log.producer</pattern>
+									<shadedPattern>sls.com.aliyun.openservices.aliyun.log.producer</shadedPattern>
+								</relocation>
 							</relocations>
 						</configuration>
 					</execution>

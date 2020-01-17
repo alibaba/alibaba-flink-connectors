@@ -31,12 +31,12 @@ import com.alibaba.flink.connectors.common.sink.Syncable;
 import com.alibaba.flink.sls.shaded.com.google.common.util.concurrent.FutureCallback;
 import com.alibaba.flink.sls.shaded.com.google.common.util.concurrent.Futures;
 import com.alibaba.flink.sls.shaded.com.google.common.util.concurrent.ListenableFuture;
-import com.aliyun.openservices.aliyun.log.producer.Result;
-import com.aliyun.openservices.aliyun.log.producer.errors.ProducerException;
-import com.aliyun.openservices.aliyun.log.producer.errors.ResultFailedException;
 import com.aliyun.openservices.log.common.LogItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sls.com.aliyun.openservices.aliyun.log.producer.Result;
+import sls.com.aliyun.openservices.aliyun.log.producer.errors.ProducerException;
+import sls.com.aliyun.openservices.aliyun.log.producer.errors.ResultFailedException;
 
 import java.io.IOException;
 import java.util.ArrayList;
