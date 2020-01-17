@@ -23,7 +23,6 @@ import com.alibaba.flink.connectors.common.sts.AbstractClientProvider;
 import com.aliyun.openservices.aliyun.log.producer.LogProducer;
 import com.aliyun.openservices.aliyun.log.producer.ProducerConfig;
 import com.aliyun.openservices.aliyun.log.producer.ProjectConfig;
-import com.aliyun.openservices.aliyun.log.producer.ProjectConfigs;
 import com.aliyun.openservices.aliyun.log.producer.errors.ProducerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,25 +76,23 @@ public class LogProducerProvider extends AbstractClientProvider<LogProducer> {
 
 	@Override
 	protected LogProducer produceNormalClient(String accessId, String accessKey) {
-		ProjectConfigs projectConfigs = new ProjectConfigs();
-		ProjectConfig projectConfig = new ProjectConfig(this.projectName, this.endPoint, accessId, accessKey);
-		projectConfigs.put(projectConfig);
-		producerConfig = new ProducerConfig(projectConfigs);
+		producerConfig = new ProducerConfig();
 		producerConfig.setLingerMs(flushInterval);
 		producerConfig.setRetries(maxRetryTimes);
 		LogProducer producer = new LogProducer(producerConfig);
+		ProjectConfig projectConfig = new ProjectConfig(this.projectName, this.endPoint, accessId, accessKey);
+		producer.putProjectConfig(projectConfig);
 		return producer;
 	}
 
 	@Override
 	protected LogProducer produceStsClient(String accessId, String accessKey, String securityToken) {
-		ProjectConfigs projectConfigs = new ProjectConfigs();
-		ProjectConfig projectConfig = new ProjectConfig(this.projectName, this.endPoint, accessId, accessKey, securityToken);
-		projectConfigs.put(projectConfig);
-		producerConfig = new ProducerConfig(projectConfigs);
+		producerConfig = new ProducerConfig();
 		producerConfig.setLingerMs(flushInterval);
 		producerConfig.setRetries(maxRetryTimes);
 		LogProducer producer = new LogProducer(producerConfig);
+		ProjectConfig projectConfig = new ProjectConfig(this.projectName, this.endPoint, accessId, accessKey, securityToken);
+		producer.putProjectConfig(projectConfig);
 		return producer;
 	}
 }
