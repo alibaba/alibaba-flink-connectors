@@ -50,7 +50,7 @@
 			</exclusions>
 		</dependency>
 		<dependency>
-			<groupId>com.ablibaba.flink</groupId>
+			<groupId>com.alibaba.flink</groupId>
 			<artifactId>aliyun-connectors-common</artifactId>
 			<version>${project.version}</version>
 		</dependency>

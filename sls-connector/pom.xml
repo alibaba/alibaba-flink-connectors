@@ -54,7 +54,7 @@ under the License.
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
-			<groupId>com.ablibaba.flink</groupId>
+			<groupId>com.alibaba.flink</groupId>
 			<artifactId>aliyun-connectors-common</artifactId>
 			<version>${project.version}</version>
 			<scope>compile</scope>

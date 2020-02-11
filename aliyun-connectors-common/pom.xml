@@ -11,7 +11,7 @@
 		<relativePath>..</relativePath>
 	</parent>
 
-	<groupId>com.ablibaba.flink</groupId>
+	<groupId>com.alibaba.flink</groupId>
 	<artifactId>aliyun-connectors-common</artifactId>
 
 	<dependencies>
