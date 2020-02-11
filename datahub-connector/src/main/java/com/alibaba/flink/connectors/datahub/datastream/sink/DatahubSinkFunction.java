@@ -34,8 +34,12 @@ public class DatahubSinkFunction<T> extends OutputFormatSinkFunction<T> {
 			String accessKeyId, String accessKeySecret,
 			DatahubRecordResolver<T> serializationSchema) {
 		this(new DatahubOutputFormat.Builder()
-					.setEndPoint(endPoint).setAccessKey(accessKeySecret).setAccessId(accessKeyId)
-					.setProjectName(projectName).setTopicName(topicName)
-					.setRecordResolver(serializationSchema).build());
+					.setEndPoint(endPoint)
+					.setAccessKey(accessKeySecret)
+					.setAccessId(accessKeyId)
+					.setProjectName(projectName)
+					.setTopicName(topicName)
+					.setRecordResolver(serializationSchema)
+				.build());
 	}
 }

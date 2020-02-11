@@ -27,6 +27,14 @@ import com.aliyun.datahub.client.model.RecordEntry;
  */
 public interface DatahubRecordResolver<T> extends RecordResolver<T> {
 	DatahubRecordResolver NOOP_DATAHUB_RECORD_RESOLVER = new NoopDatahubRecordResolver();
+
+	/**
+	 * Default implementation.
+	 */
+	default void open() {
+		// do nothing
+	}
+
 	RecordEntry getRecordEntry(T record);
 
 	/**

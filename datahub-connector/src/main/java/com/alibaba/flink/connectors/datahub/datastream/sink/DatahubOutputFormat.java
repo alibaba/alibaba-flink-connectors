@@ -211,6 +211,8 @@ public class DatahubOutputFormat<T> extends RichOutputFormat<T> implements Synca
 		outBps = MetricUtils.registerOutBps(getRuntimeContext(), "datahub");
 		latencyGauge = MetricUtils.registerOutLatency(getRuntimeContext());
 		scheduleFlusher();
+
+		recordResolver.open();
 	}
 
 	@Override
