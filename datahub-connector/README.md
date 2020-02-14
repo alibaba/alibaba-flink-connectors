@@ -11,7 +11,6 @@ CREATE TABLE mysink(i INTEGER, b BIGINT, f FLOAT, d DOUBLE, d2 DECIMAL, b2 BOOLE
         'connector.access_id'='...',    # required
         'connector.access_key'='...',   # required
         'connector.endpoint'='...',     # required
-        'connector.timezone'='...',     # optional
         'connector.buffer_size'='...',  # optional, number of message to buffer before sending out, default value 5000
         'connector.batch_size'='...',   # optional, number of message to send in a batch, default value 50
         'connector.batch_write_timeout_in_mills'='...', # optional, timeout to flush data if buffer is not full, default value 20000
@@ -20,16 +19,5 @@ CREATE TABLE mysink(i INTEGER, b BIGINT, f FLOAT, d DOUBLE, d2 DECIMAL, b2 BOOLE
     );
 ```
 
-Data Type Mappings
-
-```
-Flink       Datahub
-VARCHAR     STRING
-BIGINT      TIMESTAMP
-BIGINT      BIGINT
-DOUBLE      DOUBLE
-BOOLEAN     BOOLEAN
-DECIMAL     DECIMAL
-```
 
 

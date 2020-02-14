@@ -33,7 +33,6 @@ public class DatahubDescriptorValidator extends ConnectorDescriptorValidator {
 	public static final String CONNECTOR_ACCESS_KEY = "connector.access_key";
 	public static final String CONNECTOR_ENDPOINT = "connector.endpoint";
 
-	public  static final String CONNECTOR_TIMEZONE = "connector.timezone";
 	public static final String CONNECTOR_BUFFER_SIZE = "connector.buffer_size";
 	public static final String CONNECTOR_BATCH_SIZE = "connector.batch_size";
 	public static final String CONNECTOR_BATCH_WRITE_TIMEOUT_IN_MILLS = "connector.batch_write_timeout_in_mills";
@@ -50,7 +49,6 @@ public class DatahubDescriptorValidator extends ConnectorDescriptorValidator {
 		properties.validateString(CONNECTOR_ACCESS_KEY, false, 1);
 		properties.validateString(CONNECTOR_ENDPOINT, false, 1);
 
-		properties.validateString(CONNECTOR_TIMEZONE, true, 1);
 		properties.validateInt(CONNECTOR_BUFFER_SIZE, true, 1);
 		properties.validateInt(CONNECTOR_BATCH_SIZE, true, 1);
 		properties.validateLong(CONNECTOR_BATCH_WRITE_TIMEOUT_IN_MILLS, true, 1);

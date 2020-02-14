@@ -35,7 +35,6 @@ import static com.alibaba.flink.connectors.datahub.table.DatahubDescriptorValida
 import static com.alibaba.flink.connectors.datahub.table.DatahubDescriptorValidator.CONNECTOR_BUFFER_SIZE;
 import static com.alibaba.flink.connectors.datahub.table.DatahubDescriptorValidator.CONNECTOR_MAX_RETRY_TIMES;
 import static com.alibaba.flink.connectors.datahub.table.DatahubDescriptorValidator.CONNECTOR_RETRY_TIMEOUT_IN_MILLS;
-import static com.alibaba.flink.connectors.datahub.table.DatahubDescriptorValidator.CONNECTOR_TIMEZONE;
 
 /**
  * Table Sink for Datahub.
@@ -93,12 +92,6 @@ public class DatahubTableSink extends OutputFormatTableSink<Row> {
 				accessKey,
 				flinkRowTypeInfo);
 
-		String timezone = null;
-		if (prop.containsKey(CONNECTOR_TIMEZONE)) {
-			timezone = prop.getString(CONNECTOR_TIMEZONE);
-		}
-		outputFormat.setTimeZone(timezone);
-
 		if (prop.containsKey(CONNECTOR_BUFFER_SIZE)) {
 			outputFormat.setBufferSize(prop.getInt(CONNECTOR_BUFFER_SIZE));
 		}
@@ -119,7 +112,7 @@ public class DatahubTableSink extends OutputFormatTableSink<Row> {
 		}
 
 		outputFormat.setRecordResolver(
-				new DatahubRowRecordResolver(flinkRowTypeInfo, project, topic, accessId, accessKey, endpoint, timezone));
+				new DatahubRowRecordResolver(flinkRowTypeInfo, project, topic, accessId, accessKey, endpoint));
 
 		return outputFormat;
 	}

@@ -39,7 +39,6 @@ import static com.alibaba.flink.connectors.datahub.table.DatahubDescriptorValida
 import static com.alibaba.flink.connectors.datahub.table.DatahubDescriptorValidator.CONNECTOR_MAX_RETRY_TIMES;
 import static com.alibaba.flink.connectors.datahub.table.DatahubDescriptorValidator.CONNECTOR_PROJECT;
 import static com.alibaba.flink.connectors.datahub.table.DatahubDescriptorValidator.CONNECTOR_RETRY_TIMEOUT_IN_MILLS;
-import static com.alibaba.flink.connectors.datahub.table.DatahubDescriptorValidator.CONNECTOR_TIMEZONE;
 import static com.alibaba.flink.connectors.datahub.table.DatahubDescriptorValidator.CONNECTOR_TOPIC;
 import static com.alibaba.flink.connectors.datahub.table.DatahubDescriptorValidator.CONNECTOR_TYPE_VALUE_DATAHUB;
 import static org.apache.flink.table.descriptors.ConnectorDescriptorValidator.CONNECTOR_PROPERTY_VERSION;
@@ -76,7 +75,6 @@ public class DatahubTableFactory implements TableSinkFactory<Row> {
 		properties.add(CONNECTOR_ACCESS_KEY);
 		properties.add(CONNECTOR_ENDPOINT);
 
-		properties.add(CONNECTOR_TIMEZONE);
 		properties.add(CONNECTOR_BATCH_SIZE);
 		properties.add(CONNECTOR_BUFFER_SIZE);
 		properties.add(CONNECTOR_BATCH_WRITE_TIMEOUT_IN_MILLS);
