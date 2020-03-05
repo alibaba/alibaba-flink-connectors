@@ -25,8 +25,7 @@ under the License.
 	</parent>
 
 	<properties>
-        <!--Now we depend on Flink 1.5.2 version and -->
-		<flink.version>1.9.0</flink.version>
+		<flink.version>1.9.2</flink.version>
 	</properties>
 
 	<modelVersion>4.0.0</modelVersion>
