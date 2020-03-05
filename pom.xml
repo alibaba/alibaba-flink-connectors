@@ -21,11 +21,11 @@ under the License.
 	<parent>
 		<groupId>org.apache.flink</groupId>
 		<artifactId>flink-parent</artifactId>
-		<version>1.9.2</version>
+		<version>1.10.0</version>
 	</parent>
 
 	<properties>
-		<flink.version>1.9.2</flink.version>
+		<flink.version>1.10.0</flink.version>
 	</properties>
 
 	<modelVersion>4.0.0</modelVersion>
