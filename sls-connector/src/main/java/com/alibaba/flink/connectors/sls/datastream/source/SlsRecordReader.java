@@ -133,23 +133,24 @@ public class SlsRecordReader extends AbstractPartitionNumsListener implements Re
 
 	public List<Shard> getShardsList() throws LogException {
 		slsClientProvider = getSlsClientProvider();
-		List<Shard> shards = slsClientProvider.getClient().ListShard(project, logStore).GetShards();
-		return shards;
+		return slsClientProvider.getClient().ListShard(project, logStore).GetShards();
 	}
 
 	@Override
 	public int getPartitionsNums() {
 		try {
-			return getShardsList().size();
+			int count = getShardsList().size();
+			LOG.info("Get {} shards from SLS", count);
+			return count;
 		} catch (LogException e) {
+			LOG.info("Error fetching shard list", e);
 			throw new RuntimeException(e);
 		}
 	}
 
 	@Override
 	public String getReaderName() {
-		return "SlsRecordReader-" + String.valueOf(project) + String.valueOf(logStore) + " endPoint:" +
-			String.valueOf(endPoint);
+		return "SlsRecordReader-" + project + "-" + logStore + " endPoint:" + endPoint;
 	}
 
 	SlsClientProvider getSlsClientProvider(){
@@ -184,13 +185,13 @@ public class SlsRecordReader extends AbstractPartitionNumsListener implements Re
 		int curRetry = 0;
 		while (curRetry++ < maxRetryTime) {
 			try {
-				List<Shard> shardsList  = getShardsList();
+				List<Shard> shardsList = getShardsList();
 				if (initPartitionCount != shardsList.size()){
 					ErrorUtils.throwException(
 							String.format("Source {%s} partitions number has changed from {%s} to {%s} \n " +
 											"Wait the failover finish, blink is trying to recovery from " +
 											"source partition change", getReaderName(),
-									String.valueOf(initPartitionCount), String.valueOf(getPartitionsNums())));
+									initPartitionCount, shardsList.size()));
 				}
 				this.shardId = split.getSplitNumber();
 				for (Shard shard: shardsList) {
@@ -269,7 +270,7 @@ public class SlsRecordReader extends AbstractPartitionNumsListener implements Re
 						String.format("Source {%s} partitions number has changed from {%s} to {%s} \n " +
 										"Wait the failover finish, blink is trying to recovery from " +
 										"source partition change", getReaderName(),
-								String.valueOf(initPartitionCount), String.valueOf(getPartitionsNums())));
+								initPartitionCount, getPartitionsNums()));
 			}
 			if (interrupted) {
 				return false;
@@ -380,8 +381,10 @@ public class SlsRecordReader extends AbstractPartitionNumsListener implements Re
 	@Override
 	protected void partitionNumsChangeListener(int newPartitionsCount, int initPartitionCount) {
 		if (newPartitionsCount > initPartitionCount) {
+			LOG.warn("shard count changed from {} to {}", initPartitionCount, newPartitionsCount);
 			triggerPartitionNumFailOver();
 		} else if (newPartitionsCount < initPartitionCount){
+			LOG.warn("shard count changed from {} to {}", initPartitionCount, newPartitionsCount);
 			if (lastPartitionChangedTime == 0L){
 				lastPartitionChangedTime = System.currentTimeMillis();
 			} else if (System.currentTimeMillis() - lastPartitionChangedTime > 5 * 60 * 1000){
