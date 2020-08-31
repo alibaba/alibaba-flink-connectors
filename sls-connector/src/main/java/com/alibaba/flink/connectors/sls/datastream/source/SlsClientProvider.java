@@ -34,7 +34,6 @@ public class SlsClientProvider extends AbstractClientProvider<Client> {
 	private String endPoint = null;
 	private String consumerGroup = null;
 	private boolean directMode = false;
-	private long heartBeatIntervalMillis;
 
 	public SlsClientProvider(
 			String endPoint,
@@ -56,7 +55,6 @@ public class SlsClientProvider extends AbstractClientProvider<Client> {
 			boolean directMode) {
 		super(properties);
 		this.endPoint = endPoint;
-		this.heartBeatIntervalMillis = heartBeatIntervalMillis;
 		this.consumerGroup = consumerGroup;
 		this.directMode = directMode;
 		Consts.HTTP_SEND_TIME_OUT = 10 * 1000;
@@ -72,7 +70,7 @@ public class SlsClientProvider extends AbstractClientProvider<Client> {
 		if (directMode){
 			client.EnableDirectMode();
 		}
-		client.setUserAgent("Blink-ak" + "-" + String.valueOf(consumerGroup) + "-" +
+		client.setUserAgent("Blink-ak" + "-" + consumerGroup + "-" +
 							getHostName());
 		return client;
 	}
@@ -80,7 +78,7 @@ public class SlsClientProvider extends AbstractClientProvider<Client> {
 	@Override
 	protected Client produceStsClient(String accessId, String accessKey, String securityToken) {
 		Client client = new Client(endPoint, accessId, accessKey);
-		client.setUserAgent("Blink-sts" + "-" + String.valueOf(consumerGroup) + "-" +
+		client.setUserAgent("Blink-sts" + "-" + consumerGroup + "-" +
 							getHostName());
 		client.SetSecurityToken(securityToken);
 		return client;
@@ -88,11 +86,9 @@ public class SlsClientProvider extends AbstractClientProvider<Client> {
 
 	private String getHostName() {
 		String ip = "";
-		String hostName = "";
 		try {
 			InetAddress addr = InetAddress.getLocalHost();
-			ip = addr.getHostAddress().toString();
-			hostName = addr.getHostName().toString();
+			ip = addr.getHostAddress();
 		} catch (Exception e) {
 			//ignore
 		}
