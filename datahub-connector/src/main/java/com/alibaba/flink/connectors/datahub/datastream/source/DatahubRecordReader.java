@@ -17,6 +17,7 @@
 
 package com.alibaba.flink.connectors.datahub.datastream.source;
 
+import com.aliyun.datahub.client.exception.ShardSealedException;
 import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.core.io.InputSplit;
 
@@ -34,7 +35,6 @@ import com.aliyun.datahub.client.model.ListShardResult;
 import com.aliyun.datahub.client.model.RecordEntry;
 import com.aliyun.datahub.client.model.ShardEntry;
 import com.aliyun.datahub.client.model.ShardState;
-import com.aliyun.datahub.exception.InvalidOperationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -229,7 +229,7 @@ public class DatahubRecordReader extends AbstractPartitionNumsListener
 						}
 					}
 					break;
-				} catch (InvalidOperationException e) {
+				} catch (ShardSealedException e) {
 					if (e.getMessage().contains("The specified shard is not active")) {
 						LOG.warn("Finish Read This Shard", e);
 						readFinished = true;
@@ -284,7 +284,7 @@ public class DatahubRecordReader extends AbstractPartitionNumsListener
 						CursorType.SEQUENCE,
 						this.sequence).getCursor();
 			}
-		} catch (InvalidOperationException e){
+		} catch (ShardSealedException e){
 			LOG.error("Sequence: " + sequence, e);
 			if (e.getMessage().contains("The specified shard is not active")
 				&& shardState.equals(ShardState.CLOSED)){
