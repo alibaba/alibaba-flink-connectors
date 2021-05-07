@@ -36,7 +36,6 @@ import java.util.List;
 class SlsClientProxy {
     private static final Logger LOG = LoggerFactory.getLogger(SlsClientProxy.class);
 
-    private static final String ERROR_REQUEST_ERROR = "RequestError";
     private static final String ERROR_SHARD_NOT_EXIST = "ShardNotExist";
     private static final String ERROR_CONSUMER_GROUP_EXIST = "ConsumerGroupAlreadyExist";
     private static final int MAX_RETRIES_FOR_NON_SERVER_ERROR = 3;
@@ -92,20 +91,22 @@ class SlsClientProxy {
 
     public static class RequestContext {
         private final long beginTime;
-        private int retries;
+        private int attempt;
 
         public RequestContext() {
             this.beginTime = System.currentTimeMillis();
-            this.retries = 0;
+            this.attempt = 0;
         }
 
         public boolean waitForNextRetry(LogException ex) {
             if (!shouldRetry(ex)) {
                 return false;
             }
-            LOG.warn("Retrying for recoverable exception", ex);
+            LOG.warn("Retrying for recoverable exception code = {}, message = {}, attempt={}",
+                    ex.GetErrorCode(), ex.GetErrorMessage(), attempt);
+            ++attempt;
             try {
-                Thread.sleep(retries++ * 1000 + 500);
+                Thread.sleep(attempt * 1000);
             } catch (InterruptedException iex) {
                 LOG.warn("Sleep interrupted", iex);
             }
@@ -118,7 +119,7 @@ class SlsClientProxy {
             boolean isServerError = status >= 500;
             boolean canRetry = isNetworkError
                     || isServerError
-                    || (status != 400 && retries < MAX_RETRIES_FOR_NON_SERVER_ERROR);
+                    || (status != 400 && attempt < MAX_RETRIES_FOR_NON_SERVER_ERROR);
             return canRetry && System.currentTimeMillis() - beginTime <= MAX_RETRY_TIMEOUT_MILLIS;
         }
     }
