@@ -19,19 +19,18 @@
 package com.alibaba.flink.connectors.sls.datastream.source;
 
 import org.apache.flink.api.common.functions.RuntimeContext;
-import org.apache.flink.configuration.Configuration;
 import org.apache.flink.core.io.InputSplit;
 
 import com.alibaba.flink.connectors.common.exception.ErrorUtils;
 import com.alibaba.flink.connectors.common.reader.AbstractPartitionNumsListener;
 import com.alibaba.flink.connectors.common.reader.Interruptible;
 import com.alibaba.flink.connectors.common.reader.RecordReader;
-import com.alibaba.flink.connectors.common.util.RetryUtils;
 import com.aliyun.openservices.log.common.Consts;
 import com.aliyun.openservices.log.common.LogGroupData;
 import com.aliyun.openservices.log.common.Shard;
 import com.aliyun.openservices.log.exception.LogException;
 import com.aliyun.openservices.log.response.BatchGetLogResponse;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,7 +47,6 @@ public class SlsRecordReader extends AbstractPartitionNumsListener implements Re
 
 	protected String endPoint = null;
 	protected String accessKeyId = null;
-	protected String accessKeySecret = null;
 	protected String project = null;
 	protected String logStore = null;
 	protected int startInSec;
@@ -57,17 +55,14 @@ public class SlsRecordReader extends AbstractPartitionNumsListener implements Re
 	private int batchGetSize = 10;
 	private int shardId = -1;
 	private String lastSuccessfulCursor;
-	private long lastMonotonyIncreaseProgress = -1;
 	private String nextBeginCursor;
 	private String stopCursor;
 	private String consumerGroup = null;
-	SlsClientProvider slsClientProvider = null;
 	private long currentWatermark;
 	private int lastSuccessMessageTimestamp;
 	private volatile boolean interrupted = false;
-	private transient List<LogGroupData>  rawLogGroupDatas;
+	private transient List<LogGroupData> rawLogGroupDatas;
 
-	private Configuration properties;
 	private long lastLogPrintTime = 0L;
 	private long dataFetchedDelay = 0;
 
@@ -75,71 +70,34 @@ public class SlsRecordReader extends AbstractPartitionNumsListener implements Re
 	long mLastFetchRawSize = Long.MAX_VALUE;
 	long mLastFetchCount = Long.MAX_VALUE;
 	long mLastFetchTime = Long.MIN_VALUE;
-	private boolean directMode = false;
 	private transient Shard shard;
 	private boolean isReadOnlyShard = false;
 	private String endCursor;
 	private long lastPartitionChangedTime = 0L;
+	private final transient SlsClientProxy clientProxy;
 
 	public SlsRecordReader(
-			String endPoint,
-			String accessKeyId,
-			String accessKeySecret,
-			String project,
-			String logStore,
 			int startInSec,
 			int stopInSec,
 			int maxRetryTime,
 			int batchGetSize,
 			List<Shard> initShardList,
-			Configuration properties,
-			String consumerGroup) {
-		this.endPoint = endPoint;
-		this.accessKeyId = accessKeyId;
-		this.accessKeySecret = accessKeySecret;
-		this.project = project;
-		this.logStore = logStore;
+			String consumerGroup,
+			SlsClientProxy clientProxy) {
 		this.startInSec = startInSec;
 		this.stopInSec = stopInSec;
 		this.maxRetryTime = maxRetryTime;
 		this.batchGetSize = batchGetSize;
-		setInitPartitionCount(null == initShardList ? 0 : initShardList.size());
-		this.properties = properties;
 		this.consumerGroup = consumerGroup;
-	}
-
-	public SlsRecordReader(
-			String endPoint,
-			Configuration properties,
-			String project,
-			String logStore,
-			int startInSec,
-			int stopInSec,
-			int maxRetryTime,
-			int batchGetSize,
-			List<Shard> initShardList,
-			String consumerGroup) {
-		this.endPoint = endPoint;
-		this.project = project;
-		this.logStore = logStore;
-		this.startInSec = startInSec;
-		this.stopInSec = stopInSec;
-		this.maxRetryTime = maxRetryTime;
-		this.batchGetSize = batchGetSize;
+		this.clientProxy = clientProxy;
 		setInitPartitionCount(null == initShardList ? 0 : initShardList.size());
-		this.properties = properties;
-		this.consumerGroup = consumerGroup;
-	}
-
-	public List<Shard> getShardsList() throws LogException {
-		slsClientProvider = getSlsClientProvider();
-		return slsClientProvider.getClient().ListShard(project, logStore).GetShards();
 	}
 
 	@Override
 	public int getPartitionsNums() {
 		try {
-			int count = getShardsList().size();
+			List<Shard> shards = clientProxy.listShards();
+			int count = shards.size();
 			LOG.info("Get {} shards from SLS", count);
 			return count;
 		} catch (LogException e) {
@@ -153,27 +111,6 @@ public class SlsRecordReader extends AbstractPartitionNumsListener implements Re
 		return "SlsRecordReader-" + project + "-" + logStore + " endPoint:" + endPoint;
 	}
 
-	SlsClientProvider getSlsClientProvider(){
-		if (null == slsClientProvider) {
-			if (null != accessKeyId && null != accessKeySecret && !accessKeyId.isEmpty() &&
-				!accessKeySecret.isEmpty()) {
-				slsClientProvider = new SlsClientProvider(
-						endPoint,
-						accessKeyId,
-						accessKeySecret,
-						consumerGroup,
-						directMode);
-			} else {
-				slsClientProvider = new SlsClientProvider(
-						endPoint,
-						properties,
-						consumerGroup,
-						directMode);
-			}
-		}
-		return slsClientProvider;
-	}
-
 	@Override
 	public void open(
 			InputSplit split, RuntimeContext context) throws IOException {
@@ -185,7 +122,7 @@ public class SlsRecordReader extends AbstractPartitionNumsListener implements Re
 		int curRetry = 0;
 		while (curRetry++ < maxRetryTime) {
 			try {
-				List<Shard> shardsList = getShardsList();
+				List<Shard> shardsList = clientProxy.listShards();
 				if (initPartitionCount != shardsList.size()){
 					ErrorUtils.throwException(
 							String.format("Source {%s} partitions number has changed from {%s} to {%s} \n " +
@@ -203,21 +140,16 @@ public class SlsRecordReader extends AbstractPartitionNumsListener implements Re
 				if (shard.getStatus().equalsIgnoreCase("readonly")) {
 					LOG.info("ShardId " + shard.GetShardId() + " status:readOnly");
 					isReadOnlyShard = true;
-					this.endCursor = getSlsClientProvider().getClient().GetCursor(project, logStore, shardId, Consts
-							.CursorMode.END).GetCursor();
+					this.endCursor = clientProxy.getCursor(Consts.CursorMode.END, shardId);
 				} else {
 					LOG.info("ShardId " + shard.GetShardId() + " status:readwrite");
 					isReadOnlyShard = false;
 				}
-				this.nextBeginCursor = getSlsClientProvider().getClient()
-															.GetCursor(project, logStore, shardId, startInSec)
-															.GetCursor();
+				this.nextBeginCursor = clientProxy.getCursor(startInSec, shardId);
 				if (stopInSec == Integer.MAX_VALUE) {
 					this.stopCursor = null;
-
 				} else {
-					this.stopCursor = getSlsClientProvider().getClient()
-							.GetCursor(project, logStore, shardId, stopInSec).GetCursor();
+					this.stopCursor = clientProxy.getCursor(stopInSec, shardId);
 				}
 
 				if (consumerGroup == null) {
@@ -244,10 +176,9 @@ public class SlsRecordReader extends AbstractPartitionNumsListener implements Re
 			} catch (LogException e) {
 				LOG.error("Error in get shard list", e);
 				// refresh sts account
-				getSlsClientProvider().getClient(true, true);
+				clientProxy.refresh();
 				if (curRetry == maxRetryTime) {
-					ErrorUtils.throwException(
-							e.getMessage());
+					ErrorUtils.throwException(e.getMessage());
 				}
 				try {
 					Thread.sleep(curRetry * 500);
@@ -289,19 +220,13 @@ public class SlsRecordReader extends AbstractPartitionNumsListener implements Re
 			// 退火算法减轻对服务端的压力
 			genFetchTask = true;
 			if (mLastFetchRawSize < 1024 * 1024 && mLastFetchCount < batchGetSize) {
-				genFetchTask = (System.currentTimeMillis() - mLastFetchTime > 500);
-			} else if (mLastFetchRawSize < 2 * 1024 * 1024 && mLastFetchCount < batchGetSize) {
 				genFetchTask = (System.currentTimeMillis() - mLastFetchTime > 200);
-			} else if (mLastFetchRawSize < 4 * 1024 * 1024 && mLastFetchCount < batchGetSize) {
-				genFetchTask = (System.currentTimeMillis() - mLastFetchTime > 50);
+			} else if (mLastFetchRawSize < 2 * 1024 * 1024 && mLastFetchCount < batchGetSize) {
+				genFetchTask = (System.currentTimeMillis() - mLastFetchTime > 500);
 			}
 			if (genFetchTask) {
 				try {
-					BatchGetLogResponse batchGetLogResponse = null;
-
-					batchGetLogResponse = getSlsClientProvider().getClient().BatchGetLog(
-							project,
-							logStore,
+					BatchGetLogResponse batchGetLogResponse = clientProxy.pullData(
 							shardId,
 							batchGetSize,
 							nextBeginCursor,
@@ -312,13 +237,9 @@ public class SlsRecordReader extends AbstractPartitionNumsListener implements Re
 
 					if (batchGetLogResponse.GetCount() > 0) {
 
-						lastMonotonyIncreaseProgress = lastSuccessMessageTimestamp;
+						long lastMonotonyIncreaseProgress = lastSuccessMessageTimestamp;
 						lastSuccessfulCursor = nextBeginCursor;
-						lastSuccessMessageTimestamp = getSlsClientProvider().getClient()
-																.GetCursorTime(project, logStore,
-																				shardId,
-																				batchGetLogResponse.GetNextCursor())
-																.GetCursorTime();
+						lastSuccessMessageTimestamp = clientProxy.getCursorTime(shardId, batchGetLogResponse.GetNextCursor());
 						currentWatermark = lastSuccessMessageTimestamp * 1000L;
 						dataFetchedDelay = System.currentTimeMillis() - currentWatermark;
 						datas.addAll(batchGetLogResponse.GetLogGroups());
@@ -327,7 +248,7 @@ public class SlsRecordReader extends AbstractPartitionNumsListener implements Re
 					nextBeginCursor = batchGetLogResponse.GetNextCursor();
 				} catch (LogException e) {
 					// refresh sts account
-					getSlsClientProvider().getClient(true, true);
+					clientProxy.refresh();
 					currRetryTime++;
 					if (currRetryTime <= maxRetryTime) {
 						Thread.sleep(currRetryTime * 1000);
@@ -357,8 +278,7 @@ public class SlsRecordReader extends AbstractPartitionNumsListener implements Re
 			if (null != consumerGroup) {
 				// 更新服务端的消费进度
 				try {
-					getSlsClientProvider().getClient().UpdateCheckPoint(project, logStore, consumerGroup, shardId,
-																		lastSuccessfulCursor);
+					clientProxy.updateCheckpoint(shardId, lastSuccessfulCursor);
 				} catch (Exception e){
 					LOG.error("Update CheckPoint Error and Ignore it ", e);
 					//ignore this exception
@@ -410,11 +330,9 @@ public class SlsRecordReader extends AbstractPartitionNumsListener implements Re
 		// 0 means the start of
 		if (s.equalsIgnoreCase(SlsSourceFunction.NEW_SLS_START_FLAG)) {
 			try {
-				this.nextBeginCursor = RetryUtils.executeWithRetry(
-						() -> getSlsClientProvider().getClient().GetCursor(project, logStore, shardId, Consts.CursorMode.BEGIN).GetCursor(),
-						maxRetryTime, 10000, false);
-			} catch (Exception e){
-				throw ErrorUtils.getException(e.getMessage());
+				this.nextBeginCursor = clientProxy.getCursor(Consts.CursorMode.BEGIN, shardId);
+			} catch (LogException ex) {
+				throw new RuntimeException(ex);
 			}
 		} else {
 			this.nextBeginCursor = s;
@@ -452,7 +370,7 @@ public class SlsRecordReader extends AbstractPartitionNumsListener implements Re
 	}
 
 	public SlsRecordReader setDirectMode(boolean directMode) {
-		this.directMode = directMode;
+		clientProxy.setDirectMode(directMode);
 		return this;
 	}
 }

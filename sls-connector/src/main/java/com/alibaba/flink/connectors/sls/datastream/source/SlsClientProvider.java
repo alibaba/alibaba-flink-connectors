@@ -80,7 +80,7 @@ public class SlsClientProvider extends AbstractClientProvider<Client> {
 		Client client = new Client(endPoint, accessId, accessKey);
 		client.setUserAgent("Blink-sts" + "-" + consumerGroup + "-" +
 							getHostName());
-		client.SetSecurityToken(securityToken);
+		client.setSecurityToken(securityToken);
 		return client;
 	}
 

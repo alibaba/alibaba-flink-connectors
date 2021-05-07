@@ -18,17 +18,15 @@
 
 package com.alibaba.flink.connectors.sls.datastream.source;
 
+import com.alibaba.flink.connectors.common.reader.RecordReader;
+import com.alibaba.flink.connectors.common.source.AbstractDynamicParallelSource;
+import com.aliyun.openservices.log.common.LogGroupData;
+import com.aliyun.openservices.log.common.Shard;
+
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.core.io.InputSplit;
 
-import com.alibaba.flink.connectors.common.exception.ErrorUtils;
-import com.alibaba.flink.connectors.common.reader.RecordReader;
-import com.alibaba.flink.connectors.common.source.AbstractDynamicParallelSource;
-import com.aliyun.openservices.log.common.ConsumerGroup;
-import com.aliyun.openservices.log.common.LogGroupData;
-import com.aliyun.openservices.log.common.Shard;
-import com.aliyun.openservices.log.exception.LogException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,16 +51,14 @@ public class SlsSourceFunction extends AbstractDynamicParallelSource<List<LogGro
 	protected String accessKeySecret = null;
 	protected String project = null;
 	protected String logStore = null;
-	private String consumerGroup = null;
+	private String consumerGroup;
 	protected int maxRetryTime = 3;
 	private int batchGetSize = 10;
 	private int startInSec = 0;
 	private int stopInSec = Integer.MAX_VALUE;
-
-	private transient SlsClientProvider slsClientProvider = null;
-	private Configuration properties;
-	private boolean directMode = false;
 	private List<Shard> initShardList = new ArrayList<>();
+
+	private transient SlsClientProxy clientProxy;
 
 	public SlsSourceFunction(
 			String endPoint,
@@ -81,14 +77,13 @@ public class SlsSourceFunction extends AbstractDynamicParallelSource<List<LogGro
 		this.accessKeySecret = accessKeySecret;
 		this.project = project;
 		this.logStore = logStore;
+		this.consumerGroup = consumerGroup;
 		this.maxRetryTime = maxRetryTime;
 		this.batchGetSize = batchGetSize;
 		this.startInSec = (int) (startInMs / 1000);
 		this.stopInSec =
 				stopInMs / 1000 > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) (stopInMs / 1000);
-		this.properties = properties;
-		this.consumerGroup = consumerGroup;
-		this.slsClientProvider = new SlsClientProvider(endPoint, accessKeyId, accessKeySecret, consumerGroup, directMode);
+		this.clientProxy = new SlsClientProxy(endPoint, accessKeyId, accessKeySecret, project, logStore, consumerGroup, properties);
 		initShardList();
 		init();
 	}
@@ -107,70 +102,35 @@ public class SlsSourceFunction extends AbstractDynamicParallelSource<List<LogGro
 		this.endPoint = endPoint;
 		this.project = project;
 		this.logStore = logStore;
+		this.consumerGroup = consumerGroup;
 		this.maxRetryTime = maxRetryTime;
 		this.batchGetSize = batchGetSize;
 		this.startInSec = (int) (startInMs / 1000);
 		this.stopInSec =
 				stopInMs / 1000 > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) (stopInMs / 1000);
-		this.properties = properties;
-		this.consumerGroup = consumerGroup;
-		slsClientProvider = new SlsClientProvider(endPoint, properties, consumerGroup, directMode);
+		this.clientProxy = new SlsClientProxy(endPoint, accessKeyId, accessKeySecret, project, logStore, consumerGroup, properties);
 		initShardList();
 		init();
 	}
 
 	private void init() {
 		/**
-		 * conuserGroup一旦创建后会保存在服务端。
+		 * consumerGroup一旦创建后会保存在服务端。
 		 * 首先创建consumerGroup，如果之前已经创建过则比较conuserGroup的信息是否一致，
 		 */
-		if (null != consumerGroup) {
-			try {
-				ConsumerGroup group = new ConsumerGroup(consumerGroup, 60, true);
-				slsClientProvider.getClient().CreateConsumerGroup(project, logStore, group);
-			} catch (LogException e) {
-				//如果服务端不存在则抛异常
-				if (e.GetErrorCode().compareToIgnoreCase("ConsumerGroupAlreadyExist") != 0) {
-					ErrorUtils.throwException(
-							"error occour when create consumer group, errorCode: " + e.GetErrorCode() +
-							", errorMessage: " + e.GetErrorMessage());
-				}
-			}
-		}
+		clientProxy.ensureConsumerGroupCreated();
 	}
 
 	@Override
 	public RecordReader<List<LogGroupData>, String> createReader(Configuration config) throws IOException {
-		SlsRecordReader slsRecordReader;
-		if (null != accessKeyId && null != accessKeySecret && !accessKeyId.isEmpty() && !accessKeySecret.isEmpty()) {
-			slsRecordReader =  new SlsRecordReader(
-					endPoint,
-					accessKeyId,
-					accessKeySecret,
-					project,
-					logStore,
-					startInSec,
-					stopInSec,
-					maxRetryTime,
-					batchGetSize,
-					initShardList,
-					properties,
-					consumerGroup);
-		} else {
-			slsRecordReader = new SlsRecordReader(
-					endPoint,
-					properties,
-					project,
-					logStore,
-					startInSec,
-					stopInSec,
-					maxRetryTime,
-					batchGetSize,
-					initShardList,
-					consumerGroup);
-		}
-		slsRecordReader.setDirectMode(directMode);
-		return slsRecordReader;
+		return new SlsRecordReader(
+				startInSec,
+				stopInSec,
+				maxRetryTime,
+				batchGetSize,
+				initShardList,
+				consumerGroup,
+				clientProxy);
 	}
 
 	@Override
@@ -214,7 +174,7 @@ public class SlsSourceFunction extends AbstractDynamicParallelSource<List<LogGro
 	@Override
 	public List<String> getPartitionList() throws Exception {
 		List<String> partitions = new ArrayList<>();
-		List<Shard> shards = getSlsClientProvider().getClient().ListShard(project, logStore).GetShards();
+		List<Shard> shards = clientProxy.listShards();
 		for (Shard shard : shards) {
 			partitions.add("" + shard.GetShardId());
 		}
@@ -231,13 +191,12 @@ public class SlsSourceFunction extends AbstractDynamicParallelSource<List<LogGro
 	@Override
 	public void close() throws IOException {
 		super.close();
-
 	}
 
 	private void initShardList() {
 		if (null != initShardList) {
 			try {
-				initShardList = getSlsClientProvider().getClient().ListShard(project, logStore).GetShards();
+				initShardList = clientProxy.listShards();
 				Collections.sort(initShardList, new Comparator<Shard>() {
 					@Override
 					public int compare(Shard o1, Shard o2) {
@@ -250,30 +209,8 @@ public class SlsSourceFunction extends AbstractDynamicParallelSource<List<LogGro
 		}
 	}
 
-	SlsClientProvider getSlsClientProvider() {
-		if (null == slsClientProvider) {
-			if (null != accessKeyId && null != accessKeySecret && !accessKeyId.isEmpty() &&
-				!accessKeySecret.isEmpty()) {
-				slsClientProvider = new SlsClientProvider(
-						endPoint,
-						accessKeyId,
-						accessKeySecret,
-						consumerGroup,
-						directMode);
-
-			} else {
-				slsClientProvider = new SlsClientProvider(
-						endPoint,
-						properties,
-						consumerGroup,
-						directMode);
-			}
-		}
-		return slsClientProvider;
-	}
-
 	public SlsSourceFunction setDirectMode(boolean directMode) {
-		this.directMode = directMode;
+		clientProxy.setDirectMode(directMode);
 		return this;
 	}
 
