@@ -18,7 +18,6 @@
 
 package com.alibaba.flink.connectors.sls.datastream.source;
 
-
 import com.alibaba.flink.connectors.common.exception.ErrorUtils;
 import com.aliyun.openservices.log.Client;
 import com.aliyun.openservices.log.common.Consts;
@@ -27,6 +26,7 @@ import com.aliyun.openservices.log.common.Shard;
 import com.aliyun.openservices.log.exception.LogException;
 import com.aliyun.openservices.log.response.BatchGetLogResponse;
 import org.apache.flink.configuration.Configuration;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

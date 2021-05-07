@@ -18,14 +18,14 @@
 
 package com.alibaba.flink.connectors.sls.datastream.source;
 
+import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.configuration.Configuration;
+import org.apache.flink.core.io.InputSplit;
+
 import com.alibaba.flink.connectors.common.reader.RecordReader;
 import com.alibaba.flink.connectors.common.source.AbstractDynamicParallelSource;
 import com.aliyun.openservices.log.common.LogGroupData;
 import com.aliyun.openservices.log.common.Shard;
-
-import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.configuration.Configuration;
-import org.apache.flink.core.io.InputSplit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
