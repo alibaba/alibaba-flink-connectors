@@ -52,13 +52,15 @@ public class SlsSourceFunction extends AbstractDynamicParallelSource<List<LogGro
 	protected String project = null;
 	protected String logStore = null;
 	private String consumerGroup;
+	private Configuration properties;
 	protected int maxRetryTime = 3;
 	private int batchGetSize = 10;
 	private int startInSec = 0;
 	private int stopInSec = Integer.MAX_VALUE;
+	private boolean directMode = false;
 	private List<Shard> initShardList = new ArrayList<>();
 
-	private transient SlsClientProxy clientProxy;
+	private transient SlsClientProxy clientProxy = null;
 
 	public SlsSourceFunction(
 			String endPoint,
@@ -77,13 +79,13 @@ public class SlsSourceFunction extends AbstractDynamicParallelSource<List<LogGro
 		this.accessKeySecret = accessKeySecret;
 		this.project = project;
 		this.logStore = logStore;
+		this.properties = properties;
 		this.consumerGroup = consumerGroup;
 		this.maxRetryTime = maxRetryTime;
 		this.batchGetSize = batchGetSize;
 		this.startInSec = (int) (startInMs / 1000);
 		this.stopInSec =
 				stopInMs / 1000 > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) (stopInMs / 1000);
-		this.clientProxy = new SlsClientProxy(endPoint, accessKeyId, accessKeySecret, project, logStore, consumerGroup, properties);
 		initShardList();
 		init();
 	}
@@ -102,15 +104,23 @@ public class SlsSourceFunction extends AbstractDynamicParallelSource<List<LogGro
 		this.endPoint = endPoint;
 		this.project = project;
 		this.logStore = logStore;
+		this.properties = properties;
 		this.consumerGroup = consumerGroup;
 		this.maxRetryTime = maxRetryTime;
 		this.batchGetSize = batchGetSize;
 		this.startInSec = (int) (startInMs / 1000);
 		this.stopInSec =
 				stopInMs / 1000 > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) (stopInMs / 1000);
-		this.clientProxy = new SlsClientProxy(endPoint, accessKeyId, accessKeySecret, project, logStore, consumerGroup, properties);
 		initShardList();
 		init();
+	}
+
+	private SlsClientProxy getClientProxy() {
+		if (clientProxy == null) {
+			this.clientProxy = new SlsClientProxy(endPoint, accessKeyId, accessKeySecret, project, logStore, consumerGroup, properties);
+			this.clientProxy.setDirectMode(directMode);
+		}
+		return clientProxy;
 	}
 
 	private void init() {
@@ -118,19 +128,23 @@ public class SlsSourceFunction extends AbstractDynamicParallelSource<List<LogGro
 		 * consumerGroup一旦创建后会保存在服务端。
 		 * 首先创建consumerGroup，如果之前已经创建过则比较conuserGroup的信息是否一致，
 		 */
-		clientProxy.ensureConsumerGroupCreated();
+		getClientProxy().ensureConsumerGroupCreated();
 	}
 
 	@Override
 	public RecordReader<List<LogGroupData>, String> createReader(Configuration config) throws IOException {
 		return new SlsRecordReader(
+				endPoint,
+				accessKeyId,
+				project,
+				logStore,
 				startInSec,
 				stopInSec,
 				maxRetryTime,
 				batchGetSize,
 				initShardList,
 				consumerGroup,
-				clientProxy);
+				getClientProxy());
 	}
 
 	@Override
@@ -174,7 +188,7 @@ public class SlsSourceFunction extends AbstractDynamicParallelSource<List<LogGro
 	@Override
 	public List<String> getPartitionList() throws Exception {
 		List<String> partitions = new ArrayList<>();
-		List<Shard> shards = clientProxy.listShards();
+		List<Shard> shards = getClientProxy().listShards();
 		for (Shard shard : shards) {
 			partitions.add("" + shard.GetShardId());
 		}
@@ -196,7 +210,7 @@ public class SlsSourceFunction extends AbstractDynamicParallelSource<List<LogGro
 	private void initShardList() {
 		if (null != initShardList) {
 			try {
-				initShardList = clientProxy.listShards();
+				initShardList = getClientProxy().listShards();
 				Collections.sort(initShardList, new Comparator<Shard>() {
 					@Override
 					public int compare(Shard o1, Shard o2) {
@@ -210,7 +224,10 @@ public class SlsSourceFunction extends AbstractDynamicParallelSource<List<LogGro
 	}
 
 	public SlsSourceFunction setDirectMode(boolean directMode) {
-		clientProxy.setDirectMode(directMode);
+		if (clientProxy != null) {
+			clientProxy.setDirectMode(directMode);
+		}
+		this.directMode = directMode;
 		return this;
 	}
 

@@ -74,9 +74,13 @@ public class SlsRecordReader extends AbstractPartitionNumsListener implements Re
 	private boolean isReadOnlyShard = false;
 	private String endCursor;
 	private long lastPartitionChangedTime = 0L;
-	private final transient SlsClientProxy clientProxy;
+	private final SlsClientProxy clientProxy;
 
 	public SlsRecordReader(
+			String endPoint,
+			String accessKeyId,
+			String project,
+			String logStore,
 			int startInSec,
 			int stopInSec,
 			int maxRetryTime,
@@ -84,6 +88,10 @@ public class SlsRecordReader extends AbstractPartitionNumsListener implements Re
 			List<Shard> initShardList,
 			String consumerGroup,
 			SlsClientProxy clientProxy) {
+		this.endPoint = endPoint;
+		this.accessKeyId = accessKeyId;
+		this.project = project;
+		this.logStore = logStore;
 		this.startInSec = startInSec;
 		this.stopInSec = stopInSec;
 		this.maxRetryTime = maxRetryTime;
@@ -206,7 +214,7 @@ public class SlsRecordReader extends AbstractPartitionNumsListener implements Re
 			if (interrupted) {
 				return false;
 			}
-			if (isReadOnlyShard  && nextBeginCursor.equals(endCursor)){
+			if (isReadOnlyShard && nextBeginCursor.equals(endCursor)){
 				LOG.info(String.format("CurrentRecordRead reached end, " +
 									"project[%s]-logStore[%s]-shardId[%d]-progress[%d]-delay[%d]-Cursor[%s]-" +
 									"nextCursor[%s]-EndCursor[%s]", project,
@@ -235,17 +243,16 @@ public class SlsRecordReader extends AbstractPartitionNumsListener implements Re
 					mLastFetchCount = batchGetLogResponse.GetCount();
 					mLastFetchTime = System.currentTimeMillis();
 
+					String nextCursor = batchGetLogResponse.GetNextCursor();
 					if (batchGetLogResponse.GetCount() > 0) {
-
-						long lastMonotonyIncreaseProgress = lastSuccessMessageTimestamp;
 						lastSuccessfulCursor = nextBeginCursor;
-						lastSuccessMessageTimestamp = clientProxy.getCursorTime(shardId, batchGetLogResponse.GetNextCursor());
+						lastSuccessMessageTimestamp = clientProxy.getCursorTime(shardId, nextCursor);
 						currentWatermark = lastSuccessMessageTimestamp * 1000L;
 						dataFetchedDelay = System.currentTimeMillis() - currentWatermark;
 						datas.addAll(batchGetLogResponse.GetLogGroups());
 					}
 
-					nextBeginCursor = batchGetLogResponse.GetNextCursor();
+					nextBeginCursor = nextCursor;
 				} catch (LogException e) {
 					// refresh sts account
 					clientProxy.refresh();
@@ -270,6 +277,7 @@ public class SlsRecordReader extends AbstractPartitionNumsListener implements Re
 
 		// reach end.
 		if (datas.isEmpty()) {
+			LOG.warn("No more data to fetch, quiting loop");
 			return false;
 		}
 
@@ -367,10 +375,5 @@ public class SlsRecordReader extends AbstractPartitionNumsListener implements Re
 	@Override
 	public void interrupt() {
 		interrupted = true;
-	}
-
-	public SlsRecordReader setDirectMode(boolean directMode) {
-		clientProxy.setDirectMode(directMode);
-		return this;
 	}
 }
