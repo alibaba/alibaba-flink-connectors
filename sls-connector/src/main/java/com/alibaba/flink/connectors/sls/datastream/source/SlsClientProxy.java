@@ -202,7 +202,7 @@ class SlsClientProxy {
                 if (ctx.waitForNextRetry(ex)) {
                     continue;
                 } else if (ERROR_SHARD_NOT_EXIST.equalsIgnoreCase(ex.GetErrorCode())) {
-                    LOG.warn("Shard not exist, skip checkpointting", ex);
+                    LOG.warn("Shard not exist, skip checkpointting, message = {}", ex.GetErrorMessage());
                     return;
                 }
                 LOG.error("Error while updating checkpoint", ex);

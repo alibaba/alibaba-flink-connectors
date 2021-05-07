@@ -285,12 +285,7 @@ public class SlsRecordReader extends AbstractPartitionNumsListener implements Re
 		if (System.currentTimeMillis() - lastLogPrintTime >= 60000) {
 			if (null != consumerGroup) {
 				// 更新服务端的消费进度
-				try {
-					clientProxy.updateCheckpoint(shardId, lastSuccessfulCursor);
-				} catch (Exception e){
-					LOG.error("Update CheckPoint Error and Ignore it ", e);
-					//ignore this exception
-				}
+				clientProxy.updateCheckpoint(shardId, lastSuccessfulCursor);
 			}
 			lastLogPrintTime = System.currentTimeMillis();
 			LOG.info(String.format("Next method get current cursor, " +
