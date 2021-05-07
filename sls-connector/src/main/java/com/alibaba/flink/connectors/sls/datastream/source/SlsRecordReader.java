@@ -230,7 +230,7 @@ public class SlsRecordReader extends AbstractPartitionNumsListener implements Re
 			if (mLastFetchRawSize < 1024 * 1024 && mLastFetchCount < batchGetSize) {
 				genFetchTask = (System.currentTimeMillis() - mLastFetchTime > 200);
 			} else if (mLastFetchRawSize < 2 * 1024 * 1024 && mLastFetchCount < batchGetSize) {
-				genFetchTask = (System.currentTimeMillis() - mLastFetchTime > 500);
+				genFetchTask = (System.currentTimeMillis() - mLastFetchTime > 50);
 			}
 			if (genFetchTask) {
 				try {
