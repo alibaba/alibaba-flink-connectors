@@ -7,11 +7,10 @@
 	<parent>
 		<groupId>com.alibaba.flink</groupId>
 		<artifactId>aliyun-flink-connectors-parent</artifactId>
-		<version>0.1-SNAPSHOT</version>
+		<version>0.2-SNAPSHOT</version>
 		<relativePath>..</relativePath>
 	</parent>
 
-	<groupId>com.alibaba.flink</groupId>
 	<artifactId>aliyun-connectors-common</artifactId>
 
 	<dependencies>
@@ -36,12 +35,12 @@
 		<dependency>
 			<groupId>com.aliyun</groupId>
 			<artifactId>aliyun-java-sdk-sts</artifactId>
-			<version>2.1.6</version>
+			<version>3.1.0</version>
 		</dependency>
 		<dependency>
 			<groupId>com.aliyun</groupId>
 			<artifactId>aliyun-java-sdk-core</artifactId>
-			<version>2.3.6</version>
+			<version>4.6.0</version>
 		</dependency>
 		<dependency>
 			<groupId>commons-codec</groupId>

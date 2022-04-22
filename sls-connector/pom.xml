@@ -26,7 +26,7 @@ under the License.
 	<parent>
 		<groupId>com.alibaba.flink</groupId>
 		<artifactId>aliyun-flink-connectors-parent</artifactId>
-		<version>0.1-SNAPSHOT</version>
+		<version>0.2-SNAPSHOT</version>
 		<relativePath>..</relativePath>
 	</parent>
 
@@ -49,7 +49,7 @@ under the License.
 		</dependency>
 		<dependency>
 			<groupId>org.apache.flink</groupId>
-			<artifactId>flink-streaming-java_2.11</artifactId>
+			<artifactId>flink-streaming-java_${scala.binary.version}</artifactId>
 			<version>${flink.version}</version>
 			<scope>provided</scope>
 		</dependency>
